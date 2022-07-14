@@ -17,7 +17,7 @@ correct_thresh = 18;
 for rec = 1:n_recordings
 	fprintf('Processing recording %d/%d\n', rec, n_recordings);
 	hdp = HeadingDecoderPreprocessor(expts(rec));
-	[spks_cell{rec}, tc_cell{rec}, heading_cell{rec}] = hdp.process('backward'); % 'forward' or 'backward' denotes whether to do light-on to light-off or vice versa
+	[spks_cell{rec}, tc_cell{rec}, heading_cell{rec}] = hdp.process('forward'); % 'forward' or 'backward' denotes whether to do light-on to light-off or vice versa
 	is_head_direction{rec} = expts(rec).is_head_direction;
 end
 
@@ -34,7 +34,7 @@ bin_centers(end) = [];
 th = linspace(-180, 180, n_interp_bins)';
 tc = cat(1, leave_one_tc_m{:});
 ts = cat(1, all_spks_aligned_m{:});
-hd = HeadingDecoder(tc, ts, bin_centers);
+hd = HeadingDecoder(tc(ishd, :, :), ts(ishd, :, :), bin_centers);
 hd.calculateHeadingDistribution();
 hd.chooseHeading();
 predicted_heading_pop = cat(2, hd.predicted_heading{:});

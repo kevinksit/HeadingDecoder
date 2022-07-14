@@ -88,9 +88,18 @@ classdef HeadingDecoderPreprocessor < handle
                     [spks_aligned, leave_one_tc, heading_aligned] = obj.abort();
                     return;
                 end
+
+                % lift binData from the experiments, yeah
+                light_tuning = nan(obj.n_cells, 60, numel(segment_light));
+                for s = 1:numel(segment_light)
+                    light_tuning(:, :, s) = obj.expt.binData(spks_resampled_light(:, :, s), heading_resampled_light(:, s));
+                end
                 
-                [light_tuning] = obj.expt.getTrialResponses(light_data); % manual bin here
-                [dark_tuning] = obj.expt.getTrialResponses(dark_data); % manual bin here
+                dark_tuning = nan(obj.n_cells, 60, numel(segment_dark));
+                for s = 1:numel(segment_dark)
+                    dark_tuning(:, :, s) = obj.expt.binData(spks_resampled_dark(:, :, s), heading_resampled_dark(:, s));
+                end
+                
                 [light_tc, dark_tc] = obj.getTuningCurves(light_tuning, dark_tuning);
                     
                 % insert properly
@@ -113,7 +122,7 @@ classdef HeadingDecoderPreprocessor < handle
                         
                     case 'backward'
                         if ~isempty(segment_light)
-                            light_spks(:, :,  1:size(spks_resampled_light, 3)) = spks_resampled_light;
+                            light_spks(:, :, 1:size(spks_resampled_light, 3)) = spks_resampled_light;
                             heading_final_l(:, 1:size(heading_resampled_light, 2)) = heading_resampled_light;
                             tuning_curve_l(:, :, 1:size(light_tc, 3)) = light_tc;
                         end
@@ -122,6 +131,8 @@ classdef HeadingDecoderPreprocessor < handle
                             heading_final_d(:, end - size(heading_resampled_dark, 2) + 1 : end) = heading_resampled_dark;
                             tuning_curve_d(:, :, end - size(dark_tc, 3) + 1 : end) = dark_tc;
                         end
+                        
+                        fprintf("Light trials; %d | Dark trials: %d\n", size(light_tc, 3), size(dark_tc, 3));
                         spks_aligned(:, :, :, ii) = cat(3, dark_spks, light_spks);
                         heading_aligned(:, :, ii) = cat(2, heading_final_d, heading_final_l);
                         leave_one_tc(:, :, :, ii) = cat(3, tuning_curve_d, tuning_curve_l);
@@ -217,14 +228,15 @@ classdef HeadingDecoderPreprocessor < handle
         
         function [light_tc, dark_tc] = getTuningCurves(obj, light_tuning, dark_tuning, style)
             if nargin < 4 || isempty(style)
-                style = 'global';
+                style = 'local';
             end
+            
             light_tc = nan(size(light_tuning));
             dark_tc = nan(size(dark_tuning));
             switch style
                 case 'local'
                     for ii = 1:size(light_tuning, 3)
-                        light_tc(:, :, ii) = nanmean(light_tuning(:, :, 1:end~=ii), 3);
+                        light_tc(:, :, ii) = nanmean(light_tuning(:, :, 1:end~=ii), 3); % temp use all
                     end
                     for ii = 1:size(dark_tuning, 3)
                         dark_tc(:, :, ii) = nanmean(dark_tuning(:, :, 1:end~=ii), 3);

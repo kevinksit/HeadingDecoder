@@ -26,8 +26,18 @@ classdef HeadingDecoder < handle
 			obj.time_series = time_series;
 			obj.bin_centers = bin_centers;
 			obj.n_segments = size(time_series, 3);
-		end
+        end
 
+        
+        function fitCosines(obj)
+            keyboard
+            
+            obj.raw_tuning_wts = obj.tuning_wts;
+            for c = 1:size(obj.tuning_wts, 1)
+                
+            end
+        end
+        
 		function decode(obj)
 			obj.calculateHeadingDistribution();
 			obj.chooseHeading();
@@ -56,8 +66,11 @@ classdef HeadingDecoder < handle
 	end
 
 	methods (Access = public)
+
 		function calculateHeadingDistribution(obj)
+            sigmoid = @(x) (1 ./ (1 + exp(-x)));
 			for s = 1:obj.n_segments
+
 				% get the time series and tuning weights for each segment
 				time_series = obj.getTs(s);
 				tuning_wts = obj.getTw(s);
@@ -66,10 +79,12 @@ classdef HeadingDecoder < handle
 				nan_row = any(isnan(tuning_wts)') | any(isnan(time_series)');
 				tuning_wts(nan_row, :) = [];
 				time_series(nan_row, :) = [];
-				% Calculate heading distribution
+                
+%                 time_series = sigmoid(time_series);
+                % Calculate heading distribution
 				heading_distribution = (time_series' * tuning_wts)./sum(time_series' * tuning_wts);
 				% Temporally filter
-				out = obj.temporalFilter(heading_distribution', 6)';
+				out = obj.temporalFilter(heading_distribution', 10)'; % is this too much?
 				heading_distribution_all{s} = out;
 			end
 
